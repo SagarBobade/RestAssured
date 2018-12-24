@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -15,19 +19,20 @@ import com.aventstack.extentreports.reporter.ExtentHtmlReporter;
 
 import io.restassured.response.Response;
 
-public class ExcelOperation {
+public class FilesOperation {
+	
 
-	public static void readExcel(String filePath, String fileName, String sheetName, String reportName)
+	public static void readWriteExcel(String filePath, String fileName, String sheetName, String reportName)
 			throws IOException {
-		File file = new File(filePath+"\\"+fileName);
+		File file = new File(filePath+"//"+fileName);
 		FileInputStream inputStream = new FileInputStream(file);
 
-		 File directory = new File("Reports");
+		 File directory = new File("C://API-Test-Excel//Reports");
 		    if (! directory.exists()){
 		        directory.mkdir();
 		    }
 		    
-		ExtentHtmlReporter reporter = new ExtentHtmlReporter("./"+directory+"/"+reportName+".html");
+		ExtentHtmlReporter reporter = new ExtentHtmlReporter(directory+"//"+reportName+".html");
 		ExtentReports extent = new ExtentReports();
 		extent.attachReporter(reporter);
 		
@@ -55,7 +60,6 @@ public class ExcelOperation {
 					if (j >= sheet.getRow(i).getLastCellNum()) {
 						break;
 					}
-			//		System.out.println("working body is :- row: " + i + ") body: " + sheet.getRow(i).getCell(j));
 
 					if (sendRequest.testResponseCode(reqUrl, sheet.getRow(i).getCell(2).toString(),
 							Double.parseDouble(sheet.getRow(i).getCell(3).toString()),
@@ -64,7 +68,6 @@ public class ExcelOperation {
 									(int) Math.round(Double.parseDouble(sheet.getRow(i).getCell(4).toString()))),
 							extent) == 0) {
 						totalAPIToTesting++;
-		//				System.out.println("Pass");
 
 						HSSFCell cell = sheet.getRow(i).createCell(j + 1);
 						cell.setCellValue("PASS");
@@ -72,12 +75,10 @@ public class ExcelOperation {
 
 					} else {
 						totalAPIToTesting++;
-		//				System.out.println("Fail");
 						HSSFCell cell = sheet.getRow(i).createCell(j + 1);
 						cell.setCellValue("FAIL");
 						workbook.write(f2);
 					}
-		//			System.out.println("*************************************");
 				}
 				extent.flush();
 			}
@@ -85,4 +86,49 @@ public class ExcelOperation {
 			System.out.println("Total APIs calls were:" + totalAPIToTesting);
 		}
 	}
+	
+	/*####################################################### below code is copied from main class#######################################*/
+	public FilesOperation excelOp;
+	public static Properties prop;
+	public static InputStream input;
+	
+	public static void readPropertiesFile() {
+		prop = new Properties();
+		try {
+			input = new FileInputStream("C://API-Test-Excel//Settings.properties");
+			prop.load(input);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void testAPIs() throws IOException {
+		
+		readPropertiesFile();
+		String testDataExcelPath = prop.getProperty("TestDataExcelPath");
+		String testDataExcel = prop.getProperty("TestDataExcelName");;
+		String sheetName = prop.getProperty("SheetName");;
+		String reportName = prop.getProperty("ReportName");;
+		String from = prop.getProperty("From");
+		
+		String toCommaSeperated = prop.getProperty("To");
+        List<String> toList = Arrays.asList(toCommaSeperated.split("\\s*,\\s*"));
+        String []to = toList.toArray(new String[toList.size()]);
+		
+        System.out.println(to.length);
+        for(String a : to) {
+        	System.out.println(a+", ");
+        }
+        
+        String password = prop.getProperty("Password");
+
+		String ccCommaSeperated = prop.getProperty("Cc");
+        List<String> ccList = Arrays.asList(ccCommaSeperated.split("\\s*,\\s*"));
+        String []cc = toList.toArray(new String[ccList.size()]);
+        
+		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
+		sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
+	
+	}
+
 }
