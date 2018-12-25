@@ -110,15 +110,11 @@ public class FilesOperation {
 		String sheetName = prop.getProperty("SheetName");;
 		String reportName = prop.getProperty("ReportName");;
 		String from = prop.getProperty("From");
+		String mailShoot = prop.getProperty("MailShoot");
 		
 		String toCommaSeperated = prop.getProperty("To");
         List<String> toList = Arrays.asList(toCommaSeperated.split("\\s*,\\s*"));
         String []to = toList.toArray(new String[toList.size()]);
-		
-        System.out.println(to.length);
-        for(String a : to) {
-        	System.out.println(a+", ");
-        }
         
         String password = prop.getProperty("Password");
 
@@ -127,8 +123,9 @@ public class FilesOperation {
         String []cc = toList.toArray(new String[ccList.size()]);
         
 		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
-		sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
-	
+		if(mailShoot.equalsIgnoreCase("true")) {
+			sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
+		}
 	}
 
 }
