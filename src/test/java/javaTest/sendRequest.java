@@ -86,4 +86,30 @@ public class sendRequest {
 
 	}
 
+	public static String hitUserAuthAPI(String userAuthAPIUrl, String methodName, String JSONBody) {
+
+		if (!JSONBody.contains(null)) {
+			JSONObject jsonobj = new JSONObject(JSONBody);
+		
+			Response resp = null;
+			int code = 0;
+			RestAssured.baseURI = userAuthAPIUrl;
+			RequestSpecification request = RestAssured.given();
+			request.header("Content-Type", "application/json");
+
+			request.body(JSONBody);
+			resp = request.post();
+			if (resp != null) {
+				code = resp.getStatusCode();
+				if(code == 200) {
+					
+					/*read here respose and in header or in body bearer token will be provided just fetch and use it for further admin api calls*/
+					return resp.getBody().toString();
+				}
+			}
+		}
+		
+		return "EUBearerToken";
+	}
+
 }

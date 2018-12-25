@@ -109,22 +109,31 @@ public class FilesOperation {
 		String testDataExcel = prop.getProperty("TestDataExcelName");;
 		String sheetName = prop.getProperty("SheetName");;
 		String reportName = prop.getProperty("ReportName");;
-		String from = prop.getProperty("From");
 		String mailShoot = prop.getProperty("MailShoot");
+		String TestAccessibilityTesting = prop.getProperty("TestAccessibilityTesting");   
+				
+		if(TestAccessibilityTesting.equalsIgnoreCase("true")) {
+		String userAuthAPIUrl = prop.getProperty("AuthenticationAPIUrl");
+		String JSONBody = prop.getProperty("JSONBody");
+		String method = prop.getProperty("Method");
 		
+			String token = sendRequest.hitUserAuthAPI(userAuthAPIUrl, method, JSONBody );
+			System.out.println("token :- "+token);
+		}
+
+		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
+
+		if(mailShoot.equalsIgnoreCase("true")) {
+		String from = prop.getProperty("From");
 		String toCommaSeperated = prop.getProperty("To");
         List<String> toList = Arrays.asList(toCommaSeperated.split("\\s*,\\s*"));
         String []to = toList.toArray(new String[toList.size()]);
-        
         String password = prop.getProperty("Password");
-
-		String ccCommaSeperated = prop.getProperty("Cc");
+        String ccCommaSeperated = prop.getProperty("Cc");
         List<String> ccList = Arrays.asList(ccCommaSeperated.split("\\s*,\\s*"));
         String []cc = toList.toArray(new String[ccList.size()]);
-        
-		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
-		if(mailShoot.equalsIgnoreCase("true")) {
-			sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
+
+        sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
 		}
 	}
 
