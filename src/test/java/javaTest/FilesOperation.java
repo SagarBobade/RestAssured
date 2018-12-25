@@ -21,7 +21,8 @@ import io.restassured.response.Response;
 
 public class FilesOperation {
 	
-
+	public static String propertiesFilePath = "C://API-Test-Excel//Settings.properties";
+	
 	public static void readWriteExcel(String filePath, String fileName, String sheetName, String reportName)
 			throws IOException {
 		File file = new File(filePath+"//"+fileName);
@@ -95,7 +96,7 @@ public class FilesOperation {
 	public static void readPropertiesFile() {
 		prop = new Properties();
 		try {
-			input = new FileInputStream("C://API-Test-Excel//Settings.properties");
+			input = new FileInputStream(propertiesFilePath);
 			prop.load(input);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -119,6 +120,10 @@ public class FilesOperation {
 		
 			String token = sendRequest.hitUserAuthAPI(userAuthAPIUrl, method, JSONBody );
 			System.out.println("token :- "+token);
+			prop.setProperty("BearerToken", token);
+			FileOutputStream propFileOut = new FileOutputStream(propertiesFilePath);
+			prop.store(propFileOut, "Writing token");
+			propFileOut.close();
 		}
 
 		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
