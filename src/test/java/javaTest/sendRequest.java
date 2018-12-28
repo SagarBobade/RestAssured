@@ -1,7 +1,5 @@
 package javaTest;
 
-import static io.restassured.RestAssured.get;
-
 import org.json.JSONObject;
 import org.testng.annotations.Test;
 
@@ -16,8 +14,13 @@ import io.restassured.specification.RequestSpecification;
 public class sendRequest {
 
 	@Test
-	public static int testResponseCode(String reqUrl, String methodName, double expectedCode1, String jsonBody,
-			int expectedTime, ExtentReports extent) {
+	public static int testResponseCode(
+			String reqUrl, 
+			String methodName, 
+			double expectedCode1, 
+			String jsonBody,
+			int expectedTime, 
+			ExtentReports extent) {
 		
 		int expectedCode = Integer.valueOf((int) Math.round(expectedCode1));
 		
@@ -29,13 +32,24 @@ public class sendRequest {
 		int code = 0;
 		RestAssured.baseURI = reqUrl;
 		RequestSpecification request = RestAssured.given();
-		request.header("Content-Type", "application/json");
+		if(!FilesOperation.globalToken.equalsIgnoreCase(null)) {
+			FilesOperation.globalToken = "Bearer "+FilesOperation.globalToken;
+			request.header("Content-Type", "application/json");
+			request.header("Authorization",FilesOperation.globalToken);
+		}
+		else {
+			request.header("Content-Type", "application/json");
+		}
 		ExtentTest logger2 = extent.createTest(methodName + " " + reqUrl);
 
 		if (methodName.equalsIgnoreCase("get")) {
-			resp = get(reqUrl);
+			resp = request.request().get(RestAssured.baseURI);
+			System.out.println("res code :- "+resp.getStatusCode());
+
 		} else if (methodName.equalsIgnoreCase("post")) {
-			request.body(jsonBody);
+			if(!jsonBody.equalsIgnoreCase(null)) {
+				request.body(jsonBody);
+			}
 			resp = request.post();
 		} else if (methodName.equalsIgnoreCase("put")) {
 			request.body(jsonBody);
@@ -86,30 +100,26 @@ public class sendRequest {
 
 	}
 
-	public static String hitUserAuthAPI(String userAuthAPIUrl, String methodName, String JSONBody) {
-
-		if (!JSONBody.contains(null)) {
-			JSONObject jsonobj = new JSONObject(JSONBody);
+	public static String hitUserAuthAPI(String userAuthAPIUrl, String display, String username, String password) {
 		
-			Response resp = null;
-			int code = 0;
-			RestAssured.baseURI = userAuthAPIUrl;
-			RequestSpecification request = RestAssured.given();
-			request.header("Content-Type", "application/json");
+		RestAssured.baseURI = userAuthAPIUrl;
+		RequestSpecification reqSpec = RestAssured.given();
+		
+		reqSpec.header("Content-Type", "application/x-www-form-urlencoded");
+		reqSpec.formParam("display", display);
+		reqSpec.formParam("grant_type", "implicit");
+		reqSpec.formParam("loggedInWeb", "1");
+		reqSpec.formParam("password", password);
+		reqSpec.formParam("username", username);
 
-			request.body(JSONBody);
-			resp = request.post();
-			if (resp != null) {
-				code = resp.getStatusCode();
-				if(code == 200) {
-					
-					/*read here respose and in header or in body bearer token will be provided just fetch and use it for further admin api calls*/
-					return resp.getBody().toString();
-				}
-			}
+		try {
+			Response resp = reqSpec.request().post();
+			return resp.getBody().jsonPath().get("access_token");
+		}catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("response fail");
 		}
-		
-		return "EUBearerToken";
+		return "fail";
 	}
 
 }

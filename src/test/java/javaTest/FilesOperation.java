@@ -22,9 +22,11 @@ import io.restassured.response.Response;
 public class FilesOperation {
 	
 	public static String propertiesFilePath = "C://API-Test-Excel//Settings.properties";
+	public static String globalToken = null;
 	
 	public static void readWriteExcel(String filePath, String fileName, String sheetName, String reportName)
 			throws IOException {
+		
 		File file = new File(filePath+"//"+fileName);
 		FileInputStream inputStream = new FileInputStream(file);
 
@@ -41,7 +43,6 @@ public class FilesOperation {
 		String reqUrl = null;
 		String method = null;
 		Workbook workbook = null;
-		Response resp;
 
 		String fileExtensionName = fileName.substring(fileName.indexOf("."));
 		if (fileExtensionName.equals(".xls")) {
@@ -62,7 +63,9 @@ public class FilesOperation {
 						break;
 					}
 
-					if (sendRequest.testResponseCode(reqUrl, sheet.getRow(i).getCell(2).toString(),
+					if (sendRequest.testResponseCode(
+							reqUrl, 
+							method,
 							Double.parseDouble(sheet.getRow(i).getCell(3).toString()),
 							sheet.getRow(i).getCell(j).toString(),
 							Integer.valueOf(
@@ -88,7 +91,6 @@ public class FilesOperation {
 		}
 	}
 	
-	/*####################################################### below code is copied from main class#######################################*/
 	public FilesOperation excelOp;
 	public static Properties prop;
 	public static InputStream input;
@@ -106,24 +108,28 @@ public class FilesOperation {
 	public static void testAPIs() throws IOException {
 		
 		readPropertiesFile();
+		String TestAccessibilityTesting = prop.getProperty("TestAccessibilityTesting"); 
 		String testDataExcelPath = prop.getProperty("TestDataExcelPath");
 		String testDataExcel = prop.getProperty("TestDataExcelName");;
 		String sheetName = prop.getProperty("SheetName");;
 		String reportName = prop.getProperty("ReportName");;
 		String mailShoot = prop.getProperty("MailShoot");
-		String TestAccessibilityTesting = prop.getProperty("TestAccessibilityTesting");   
+		String display = prop.getProperty("orgCode");
+		String username = prop.getProperty("username");
+		String password = prop.getProperty("password");
+		
 				
 		if(TestAccessibilityTesting.equalsIgnoreCase("true")) {
 		String userAuthAPIUrl = prop.getProperty("AuthenticationAPIUrl");
-		String JSONBody = prop.getProperty("JSONBody");
-		String method = prop.getProperty("Method");
 		
-			String token = sendRequest.hitUserAuthAPI(userAuthAPIUrl, method, JSONBody );
-			System.out.println("token :- "+token);
-			prop.setProperty("BearerToken", token);
-			FileOutputStream propFileOut = new FileOutputStream(propertiesFilePath);
-			prop.store(propFileOut, "Writing token");
-			propFileOut.close();
+			String token = sendRequest.hitUserAuthAPI(userAuthAPIUrl, display, username, password );
+			if(!token.equals("fail")) {
+			globalToken = token;
+			}
+			else {
+				System.out.println("sendrequest token is failed");
+			}
+			
 		}
 
 		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);
@@ -133,13 +139,12 @@ public class FilesOperation {
 		String toCommaSeperated = prop.getProperty("To");
         List<String> toList = Arrays.asList(toCommaSeperated.split("\\s*,\\s*"));
         String []to = toList.toArray(new String[toList.size()]);
-        String password = prop.getProperty("Password");
+        String MailPassword = prop.getProperty("MailPassword");
         String ccCommaSeperated = prop.getProperty("Cc");
         List<String> ccList = Arrays.asList(ccCommaSeperated.split("\\s*,\\s*"));
         String []cc = toList.toArray(new String[ccList.size()]);
 
-        sendMail.sendMail(from, password, to, cc, reportName, testDataExcelPath, testDataExcel);
+        sendMail.sendMail(from, MailPassword, to, cc, reportName, testDataExcelPath, testDataExcel);
 		}
 	}
-
 }
