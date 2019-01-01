@@ -12,6 +12,8 @@ import java.util.Properties;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import com.aventstack.extentreports.ExtentReports;
@@ -23,6 +25,8 @@ public class FilesOperation {
 	
 	public static String propertiesFilePath = "C://API-Test-Excel//Settings.properties";
 	public static String globalToken = null;
+	public static Boolean globalTestAccessibilityTesting = false;
+	public static Boolean globalTestOnlyFailedScenario = false;
 	
 	public static void readWriteExcel(String filePath, String fileName, String sheetName, String reportName)
 			throws IOException {
@@ -42,7 +46,9 @@ public class FilesOperation {
 		int totalAPIToTesting = 0;
 		String reqUrl = null;
 		String method = null;
+		Double expectedCode = null;
 		Workbook workbook = null;
+		HSSFCell cell = null;
 
 		String fileExtensionName = fileName.substring(fileName.indexOf("."));
 		if (fileExtensionName.equals(".xls")) {
@@ -53,7 +59,7 @@ public class FilesOperation {
 
 			for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 				FileOutputStream f2 = new FileOutputStream(file);
-
+				
 				reqUrl = sheet.getRow(i).getCell(1).toString();
 				method = sheet.getRow(i).getCell(2).toString();
 
@@ -61,6 +67,13 @@ public class FilesOperation {
 
 					if (j >= sheet.getRow(i).getLastCellNum()) {
 						break;
+					}
+					if(globalTestOnlyFailedScenario.equals(true)) {
+						if(sheet.getRow(i).getCell(j + 1).getStringCellValue().toString().equalsIgnoreCase("PASS")) {
+					//	if(!((j + 1) > sheet.getRow(i).getLastCellNum()-1))
+					//		System.out.println(sheet.getRow(i).getCell(j + 1).getStringCellValue().toString());
+						continue;
+						}
 					}
 
 					if (sendRequest.testResponseCode(
@@ -72,16 +85,34 @@ public class FilesOperation {
 									(int) Math.round(Double.parseDouble(sheet.getRow(i).getCell(4).toString()))),
 							extent) == 0) {
 						totalAPIToTesting++;
-
-						HSSFCell cell = sheet.getRow(i).createCell(j + 1);
+						if(globalTestOnlyFailedScenario.equals(true)) {
+							 cell = sheet.getRow(i).getCell(j + 1);							
+						}
+						else {
+						 cell = sheet.getRow(i).createCell(j + 1);
+						}
 						cell.setCellValue("PASS");
+				        CellStyle backgroundStyle = workbook.createCellStyle();
+						backgroundStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+						 
 						workbook.write(f2);
 
 					} else {
+						System.out.println("fail :"+ Double.parseDouble(sheet.getRow(i).getCell(3).toString()));
 						totalAPIToTesting++;
-						HSSFCell cell = sheet.getRow(i).createCell(j + 1);
-						cell.setCellValue("FAIL");
+						if(globalTestOnlyFailedScenario.equals(true)) {
+							 sheet.getRow(i).getCell(j + 1).setCellValue("FAIL");						
+						}
+						else {
+						 sheet.getRow(i).createCell(j + 1).setCellValue("FAIL");
+						}
+						//cell.setCellValue("FAIL");
+				        CellStyle backgroundStyle = workbook.createCellStyle();
+						backgroundStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
 						workbook.write(f2);
+					}
+					if(globalTestAccessibilityTesting.equals(true)) {
+						break;
 					}
 				}
 				extent.flush();
@@ -117,19 +148,22 @@ public class FilesOperation {
 		String display = prop.getProperty("orgCode");
 		String username = prop.getProperty("username");
 		String password = prop.getProperty("password");
+		String testOnlyFailedScenario = prop.getProperty("testOnlyFailedScenario");
+		if(testOnlyFailedScenario.equalsIgnoreCase("true")) {
+			globalTestOnlyFailedScenario = true;
+		}
 		
-				
 		if(TestAccessibilityTesting.equalsIgnoreCase("true")) {
 		String userAuthAPIUrl = prop.getProperty("AuthenticationAPIUrl");
 		
 			String token = sendRequest.hitUserAuthAPI(userAuthAPIUrl, display, username, password );
 			if(!token.equals("fail")) {
 			globalToken = token;
+			globalTestAccessibilityTesting = true;
 			}
 			else {
 				System.out.println("sendrequest token is failed");
 			}
-			
 		}
 
 		readWriteExcel(testDataExcelPath, testDataExcel, sheetName, reportName);

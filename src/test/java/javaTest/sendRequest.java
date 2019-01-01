@@ -23,27 +23,33 @@ public class sendRequest {
 			ExtentReports extent) {
 		
 		int expectedCode = Integer.valueOf((int) Math.round(expectedCode1));
-		
+
 		if (!jsonBody.contains("NA")) {
 			JSONObject jsonobj = new JSONObject(jsonBody);
 		}
-		
+
 		Response resp = null;
 		int code = 0;
 		RestAssured.baseURI = reqUrl;
 		RequestSpecification request = RestAssured.given();
-		if(!FilesOperation.globalToken.equalsIgnoreCase(null)) {
+		if(!(FilesOperation.globalToken == null)) {
 			FilesOperation.globalToken = "Bearer "+FilesOperation.globalToken;
 			request.header("Content-Type", "application/json");
 			request.header("Authorization",FilesOperation.globalToken);
 		}
 		else {
 			request.header("Content-Type", "application/json");
+			System.out.println("1");
+
 		}
 		ExtentTest logger2 = extent.createTest(methodName + " " + reqUrl);
 
 		if (methodName.equalsIgnoreCase("get")) {
+			System.out.println("2");
+			
 			resp = request.request().get(RestAssured.baseURI);
+			System.out.println("3");
+
 			System.out.println("res code :- "+resp.getStatusCode());
 
 		} else if (methodName.equalsIgnoreCase("post")) {
